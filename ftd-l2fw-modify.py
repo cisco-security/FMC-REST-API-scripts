@@ -21,10 +21,10 @@ from device_script import serviceModify
 
 
 ldevid = 1234
-interface1 = 'GigabitEthernet0/1'
-interface2 = 'GigabitEthernet0/2'
-ifname1 = 'appnic'
-ifname2 = 'dbnic'
+interface1 = 'GigabitEthernet0/0'
+interface2 = 'GigabitEthernet0/1'
+ifname1 = 'webnic'
+ifname2 = 'appnic'
 vlan1 = 1500
 vlan2 = 1501
 zone1 = 'web-zone'
