@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 ################################################################################
 #                                                                              #
@@ -17,18 +18,52 @@
 #    under the License.                                                        #
 #                                                                              #
 ################################################################################
-from device_script import serviceModify
+import sys
+sys.path.insert(0, '/home/user/manual-devpkg/ftd-fi')
 
+from device_script import serviceAudit
 
-ldevid = 1234
-interface1 = 'GigabitEthernet0/0'
-interface2 = 'GigabitEthernet0/1'
-ifname1 = 'webnic'
-ifname2 = 'appnic'
-vlan1 = 1500
-vlan2 = 1501
-zone1 = 'web-zone'
-zone2 = 'app-zone'
+#Parameters
+
+tenant_name = 'cl'
+#tenant_name = raw_input("Enter Tenant name: ")
+
+l47_dev_name = 'ftdvha'
+#l47_dev_name = raw_input("L4-L7 Device Name: ")
+
+vlan_tagged = False
+#vlan_tagged =  raw_input("Tagged VLAN True/False: ")
+
+interface1 = 'G0/3'
+interface1 = raw_input("Interface1 i.e. unmanaged graph is on G0/1, for no graph use G0/3: ")
+
+interface2 = 'G0/4'
+interface2 = raw_input("Interface2 i.e. unmanaged graph is on G0/2, for no graph use G0/4: ")
+
+data_ip1 = '10.1.0.1/16'
+#data_ip1 = raw_input("Interface1 IP/mask i.e. 10.1.0.1/16: "
+
+data_ip2 = '10.2.0.1/24'
+#data_ip2 = raw_input("Interface1 IP/mask i.e. 10.2.0.1/24: "
+
+ifname1 = 'app'
+#ifname1 =  raw_input("Interface1 name i.e. app-nic: ")
+
+ifname2 = 'db'
+#ifname2 =  raw_input("Interface2 name i.e. db-nic: ")
+
+vlan1 = 310
+#vlan1 =  raw_input("Interface1 VLAN tag number i.e. 310: ")
+
+vlan2 = 311
+#vlan2 =  raw_input("Interface2 VLAN tag number i.e. 311: ")
+
+zone1 = 'app-zone'
+#zone1 =  raw_input("Zone1 name i.e. app-zone: ")
+
+zone2 = 'db-zone'
+#zone2 =  raw_input("Zone2 name i.e. db-zone: ")
+
 bvi_ip = '10.1.0.1/16'
 
 policy_name = 'ftd-policy'
@@ -36,26 +71,65 @@ rule1_name = 'ftd-rule1'
 rule1_bidir = 'true'
 
 rule2_name = 'ftd-rule2'
-rule2_bidir = 'true'
+rule2_bidir = True
 
-ftd_ip = "10.0.0.25"
+ftd_ip1 = "10.0.0.51"
+ftd_ip2 = "10.0.0.52"
 fmc_ip = "10.0.0.30"
 username = "apiuser"
 password = "cisco"
-virtual = False
+virtual = True
 bvi_id = 1
 
+
 config_dev = {
-   "dn": "uni/tn-pod54/lDevVip-ftd-5525-L2FW",
-   "name": "ftd-5525-L2FW",
+   "dn": "uni/tn-%s/lDevVip-%s/vFTD-l3fw" % (tenant_name,l47_dev_name),
+   "name": "FTD-HA1",
+   "host": fmc_ip,
    "virtual": virtual,
    "devs": {
       "Device1": {
-         "dn": "uni/tn-pod54/lDevVip-ftd-5525-L2FW/cDev-Device1",
+         "dn": "uni/tn-%s/lDevVip-%s/vFTD-l3fw/cDev-Device1" % (tenant_name,l47_dev_name),
          "state": 3,
-         "host": ftd_ip,
+         "host": ftd_ip1,
          "virtual": virtual,
-         "version": "6.2.0 (build 362)",
+         "manager": {
+            "hosts": {
+               fmc_ip: {
+                  "port": 443
+               }
+            },
+            "name": "fmc62",
+            "creds": {
+               "username": username,
+               "password": password
+            }
+         },
+         "version": "6.2.2 (build 81)",
+         "port": 443,
+         "creds": {
+            "username": username,
+            "password": password
+         }
+      },
+      "Device2": {
+         "dn": "uni/tn-%s/lDevVip-%s/vFTD-l3fw/cDev-Device2" % (tenant_name,l47_dev_name),
+         "state": 3,
+         "host": ftd_ip2,
+         "virtual": virtual,
+         "manager": {
+            "hosts": {
+               fmc_ip: {
+                  "port": 443
+               }
+            },
+            "name": "fmc62",
+            "creds": {
+               "username": username,
+               "password": password
+            }
+         },
+         "version": "6.2.2 (build 81)",
          "port": 443,
          "creds": {
             "username": username,
@@ -63,36 +137,33 @@ config_dev = {
          }
       }
    },
-   "host": fmc_ip,
+   "manager": {
+            "hosts": {
+               fmc_ip: {
+            "port": 443
+         }
+      },
+      "name": "fmc62",
+      "creds": {
+         "username": username,
+         "password": password
+      }
+   },
    "contextaware": False,
+   "funcmode": 1,
    "port": 443,
    "creds": {
-        "username": username,
-        "password": password
+      "username": username,
+      "password": password
    }
 }
-
 config = {
-   (0, '', 4915): {
-      'dn': "uni/vDev-[uni/tn-pod54/lDevVip-ftd-5525-L2FW]-tn-[uni/tn-pod54]-ctx-pod54net",
+   (0, '', 4548): {
+      'dn': "uni/vDev-[uni/tn-pod3/lDevVip-vFTD-l3fw]-tn-[uni/tn-pod3]-ctx-pod3net",
       'transaction': 0,
       'ackedstate': 0,
       'value': {
-         (8, '', 'ftd-5525-L2FW_web-nic_3014658_16392'): {
-            'state': 3,
-            'transaction': 0,
-            'vif': "ftd-5525-L2FW_web-nic",
-            'ackedstate': 0,
-            'encap': "3014658_16392"
-         },
-         (7, '', '3014658_49157'): {
-            'transaction': 0,
-            'ackedstate': 0,
-            'state': 3,
-            'tag': vlan2,
-            'type': 1
-         },
-         (4, 'SecurityZone', zone2): {
+         (4, 'SecurityZone', zone1): {
             'state': 3,
             'transaction': 0,
             'ackedstate': 0,
@@ -101,32 +172,52 @@ config = {
                   'state': 3,
                   'transaction': 0,
                   'ackedstate': 0,
-                  'value': "SWITCHED"
+                  'value': "ROUTED"
                }
             }
          },
-         (4, 'BridgeGroupInterface', 'BVI1'): {
-            'state': 3,
+         (1, '', 4800): {
             'transaction': 0,
             'ackedstate': 0,
             'value': {
-               (5, 'bridge_group_id', 'BridgeGroupId'): {
-                  'state': 3,
-                  'transaction': 0,
-                  'ackedstate': 0,
-                  'value': bvi_id
-               },
-               (4, 'Interfaces', 'Interfaces'): {
+               (3, 'FTD', 'l3fw'): {
                   'state': 3,
                   'transaction': 0,
                   'ackedstate': 0,
                   'value': {
-                     (4, 'Interface', 'ExternalInterface'): {
+                     (4, 'AccessPolicyFolder', 'AccessPolicyFolder'): {
                         'state': 3,
                         'transaction': 0,
                         'ackedstate': 0,
                         'value': {
-                           (6, 'InterfaceHolder', 'InterfaceHolder'): {
+                           (6, 'InAccessPolicyRel', 'InAccessPolicyRel'): {
+                              'state': 3,
+                              'transaction': 0,
+                              'target': policy_name,
+                              'ackedstate': 0
+                           }
+                        }
+                     },
+                     (2, 'external', 'consumer'): {
+                        'state': 3,
+                        'transaction': 0,
+                        'ackedstate': 0,
+                        'value': {
+                           (9, '', 'vFTD-l3fw_app_2293763_16388'): {
+                              'state': 3,
+                              'transaction': 0,
+                              'target': "vFTD-l3fw_app_2293763_16388",
+                              'ackedstate': 0
+                           }
+                        }
+                     },
+                     (4, 'ExIntfConfigRelFolder', 'ExtConfig'): {
+                        'state': 3,
+                        'transaction': 0,
+                        'ackedstate': 0,
+                        'value': {
+                           (6, 'ExIntfConfigRel', 'ExtConfigrel'): {
+                              'connector': "consumer",
                               'state': 3,
                               'transaction': 0,
                               'target': "externalInterface",
@@ -134,12 +225,26 @@ config = {
                            }
                         }
                      },
-                     (4, 'Interface', 'InternalInterface'): {
+                     (2, 'internal', 'provider'): {
                         'state': 3,
                         'transaction': 0,
                         'ackedstate': 0,
                         'value': {
-                           (6, 'InterfaceHolder', 'InterfaceHolder'): {
+                           (9, '', 'vFTD-l3fw_db_2293763_32774'): {
+                              'state': 3,
+                              'transaction': 0,
+                              'target': "vFTD-l3fw_db_2293763_32774",
+                              'ackedstate': 0
+                           }
+                        }
+                     },
+                     (4, 'InIntfConfigRelFolder', 'IntConfig'): {
+                        'state': 3,
+                        'transaction': 0,
+                        'ackedstate': 0,
+                        'value': {
+                           (6, 'InIntfConfigRel', 'InConfigrel'): {
+                              'connector': "provider",
                               'state': 3,
                               'transaction': 0,
                               'target': "internalInterface",
@@ -148,36 +253,11 @@ config = {
                         }
                      }
                   }
-               },
-               (4, 'IPv4Config', 'IPv4Config'): {
-                  'state': 3,
-                  'transaction': 0,
-                  'ackedstate': 0,
-                  'value': {
-                     (4, 'static', 'static'): {
-                        'state': 3,
-                        'transaction': 0,
-                        'ackedstate': 0,
-                        'value': {
-                           (5, 'address', 'address'): {
-                              'state': 3,
-                              'transaction': 0,
-                              'ackedstate': 0,
-                              'value': bvi_ip
-                           }
-                        }
-                     }
-                  }
                }
-            }
-         },
-         (10, '', 'ftd-5525-L2FW_app-nic'): {
-            'state': 3,
-            'transaction': 0,
-            'cifs': {
-               'Device1': interface2
             },
-            'ackedstate': 0
+            'state': 3,
+            'absGraph': "l3fw-ftdv-graph",
+            'rn': "vGrp-[uni/tn-pod3/GraphInst_C-[uni/tn-pod3/brc-app-to-db]-G-[uni/tn-pod3/AbsGraph-l3fw-ftdv-graph]-S-[uni/tn-pod3/ctx-pod3net]]"
          },
          (4, 'AccessPolicy', policy_name): {
             'state': 3,
@@ -194,7 +274,7 @@ config = {
                         'transaction': 0,
                         'ackedstate': 0,
                         'value': {
-                           (6, 'DestinationZones', 'DestinationZone'): {
+                           (6, 'DestinationZones', 'DestinationZones'): {
                               'state': 3,
                               'transaction': 0,
                               'target': "internalInterface/int_security_zone",
@@ -206,7 +286,7 @@ config = {
                         'state': 3,
                         'transaction': 0,
                         'ackedstate': 0,
-                        'value': rule1_bidir
+                        'value': "True"
                      },
                      (4, 'AccSourceZones', 'AccSourceZones'): {
                         'state': 3,
@@ -230,32 +310,32 @@ config = {
                   'value': {
                      (5, 'bidirectional', 'bidirectional'): {
                         'state': 3,
-                        'transaction': 1,
+                        'transaction': 0,
                         'ackedstate': 0,
-                        'value': rule2_bidir
+                        'value': "True"
                      },
                      (4, 'AccDestinationZones', 'AccDestinationZones'): {
                         'state': 3,
-                        'transaction': 1,
+                        'transaction': 0,
                         'ackedstate': 0,
                         'value': {
                            (6, 'DestinationZones', 'DestinationZones'): {
                               'state': 3,
-                              'transaction': 1,
-                              'target': "externalInterface/int_security_zone",
+                              'transaction': 0,
+                              'target': "internalInterface/int_security_zone",
                               'ackedstate': 0
                            }
                         }
                      },
                      (4, 'AccSourceZones', 'AccSourceZones'): {
                         'state': 3,
-                        'transaction': 1,
+                        'transaction': 0,
                         'ackedstate': 0,
                         'value': {
                            (6, 'SourceZones', 'SourceZones'): {
                               'state': 3,
-                              'transaction': 1,
-                              'target': "internalInterface/int_security_zone",
+                              'transaction': 0,
+                              'target': "externalInterface/int_security_zone",
                               'ackedstate': 0
                            }
                         }
@@ -264,22 +344,29 @@ config = {
                }
             }
          },
-         (10, '', 'ftd-5525-L2FW_web-nic'): {
+         (8, '', 'vFTD-l3fw_app_2293763_16388'): {
             'state': 3,
             'transaction': 0,
-            'cifs': {
-               'Device1': interface1
-            },
-            'ackedstate': 0
-         },
-         (8, '', 'ftd-5525-L2FW_app-nic_3014658_49157'): {
-            'state': 3,
-            'transaction': 0,
-            'vif': "ftd-5525-L2FW_app-nic",
+            'vif': "vFTD-l3fw_app",
             'ackedstate': 0,
-            'encap': "3014658_49157"
+            'encap': "2293763_16388"
          },
-         (4, 'SecurityZone', zone1): {
+         (8, '', 'vFTD-l3fw_db_2293763_32774'): {
+            'state': 3,
+            'transaction': 0,
+            'vif': "vFTD-l3fw_db",
+            'ackedstate': 0,
+            'encap': "2293763_32774"
+         },
+         (7, '', '2293763_16388'): {
+            'transaction': 0,
+            'ackedstate': 0,
+            'portgroup': "pod3|vFTD-l3fwctxpod3netweb|app",
+            'state': 3,
+            'tag': vlan1,
+            'type': 1
+         },
+         (4, 'SecurityZone', zone2): {
             'state': 3,
             'transaction': 0,
             'ackedstate': 0,
@@ -288,105 +375,9 @@ config = {
                   'state': 3,
                   'transaction': 0,
                   'ackedstate': 0,
-                  'value': "SWITCHED"
+                  'value': "ROUTED"
                }
             }
-         },
-         (1, '', 5791): {
-            'transaction': 0,
-            'ackedstate': 0,
-            'value': {
-               (3, 'FTD', 'N1'): {
-                  'state': 3,
-                  'transaction': 0,
-                  'ackedstate': 0,
-                  'value': {
-                     (4, 'AccessPolicyFolder', 'AccessPolicyFolder'): {
-                        'state': 3,
-                        'transaction': 0,
-                        'ackedstate': 0,
-                        'value': {
-                           (6, 'InAccessPolicyRel', 'InAccessPolicyRel'): {
-                              'state': 3,
-                              'transaction': 0,
-                              'target': "ftd-policy",
-                              'ackedstate': 0
-                           }
-                        }
-                     },
-                     (4, 'ExIntfConfigRelFolder', 'ExtConfig'): {
-                        'state': 3,
-                        'transaction': 0,
-                        'ackedstate': 0,
-                        'value': {
-                           (6, 'ExIntfConfigRel', 'ExtConfigrel'): {
-                              'connector': "consumer",
-                              'state': 3,
-                              'transaction': 0,
-                              'target': "externalInterface",
-                              'ackedstate': 0
-                           }
-                        }
-                     },
-                     (2, 'external', 'consumer'): {
-                        'state': 3,
-                        'transaction': 0,
-                        'ackedstate': 0,
-                        'value': {
-                           (9, '', 'ftd-5525-L2FW_web-nic_3014658_16392'): {
-                              'state': 3,
-                              'transaction': 0,
-                              'target': "ftd-5525-L2FW_web-nic_3014658_16392",
-                              'ackedstate': 0
-                           }
-                        }
-                     },
-                     (2, 'internal', 'provider'): {
-                        'state': 3,
-                        'transaction': 0,
-                        'ackedstate': 0,
-                        'value': {
-                           (9, '', 'ftd-5525-L2FW_app-nic_3014658_49157'): {
-                              'state': 3,
-                              'transaction': 0,
-                              'target': "ftd-5525-L2FW_app-nic_3014658_49157",
-                              'ackedstate': 0
-                           }
-                        }
-                     },
-                     (4, 'BridgeInterfaceFolder', 'BridgeInterfaceFolder'): {
-                        'state': 3,
-                        'transaction': 0,
-                        'ackedstate': 0,
-                        'value': {
-                           (6, 'InBridgeGroupInterfaceRel', 'InBridgeGroupInterfaceRel'): {
-                              'state': 3,
-                              'transaction': 0,
-                              'target': "BVI1",
-                              'ackedstate': 0
-                           }
-                        }
-                     },
-                     (4, 'InIntfConfigRelFolder', 'IntConfig'): {
-                        'state': 3,
-                        'transaction': 0,
-                        'ackedstate': 0,
-                        'value': {
-                           (6, 'InIntfConfigRel', 'InConfigrel'): {
-                              'connector': "provider",
-                              'state': 3,
-                              'transaction': 0,
-                              'target': "internalInterface",
-                              'ackedstate': 0
-                           }
-                        }
-                     }
-                  }
-               }
-            },
-            'state': 3,
-            'absGraph': "ftd-l2fw-graph",
-            'rn': "vGrp-[uni/tn-pod54/GraphInst_C-[uni/tn-pod54/brc-web-to-app2]-G-[uni/tn-pod54/AbsGraph-ftd-l2fw-graph]-S-[uni/tn-pod54]]"
          },
          (4, 'InterfaceConfig', 'externalInterface'): {
             'state': 3,
@@ -403,7 +394,27 @@ config = {
                   'state': 3,
                   'transaction': 0,
                   'ackedstate': 0,
-                  'value': "true"
+                  'value': "True"
+               },
+               (4, 'IPv4Config', 'IPv4Config'): {
+                  'state': 3,
+                  'transaction': 0,
+                  'ackedstate': 0,
+                  'value': {
+                     (4, 'static', 'static'): {
+                        'state': 3,
+                        'transaction': 0,
+                        'ackedstate': 0,
+                        'value': {
+                           (5, 'address', 'address'): {
+                              'state': 3,
+                              'transaction': 0,
+                              'ackedstate': 0,
+                              'value': data_ip1
+                           }
+                        }
+                     }
+                  }
                },
                (4, 'int_security_zone', 'int_security_zone'): {
                   'state': 3,
@@ -413,7 +424,7 @@ config = {
                      (6, 'security_zone', 'security_zone'): {
                         'state': 3,
                         'transaction': 0,
-                        'target': "web-zone",
+                        'target': zone1,
                         'ackedstate': 0
                      }
                   }
@@ -435,7 +446,27 @@ config = {
                   'state': 3,
                   'transaction': 0,
                   'ackedstate': 0,
-                  'value': "true"
+                  'value': "True"
+               },
+               (4, 'IPv4Config', 'IPv4Config'): {
+                  'state': 3,
+                  'transaction': 0,
+                  'ackedstate': 0,
+                  'value': {
+                     (4, 'static', 'static'): {
+                        'state': 3,
+                        'transaction': 0,
+                        'ackedstate': 0,
+                        'value': {
+                           (5, 'address', 'address'): {
+                              'state': 3,
+                              'transaction': 0,
+                              'ackedstate': 0,
+                              'value': data_ip2
+                           }
+                        }
+                     }
+                  }
                },
                (4, 'int_security_zone', 'int_security_zone'): {
                   'state': 3,
@@ -445,29 +476,46 @@ config = {
                      (6, 'security_zone', 'security_zone'): {
                         'state': 3,
                         'transaction': 0,
-                        'target': "app-zone",
+                        'target': zone2,
                         'ackedstate': 0
                      }
                   }
                }
             }
          },
-         (7, '', '3014658_16392'): {
+         (10, '', 'vFTD-l3fw_db'): {
+            'state': 3,
+            'transaction': 0,
+            'cifs': {
+               'Device1': interface2,
+               'Device2': interface2
+            },
+            'ackedstate': 0
+         },
+         (7, '', '2293763_32774'): {
             'transaction': 0,
             'ackedstate': 0,
-            'state': 2,
-            'tag': vlan1,
+            'portgroup': "pod3|vFTD-l3fwctxpod3netdb|db",
+            'state': 3,
+            'tag': vlan2,
             'type': 1
+         },
+         (10, '', 'vFTD-l3fw_app'): {
+            'state': 3,
+            'transaction': 0,
+            'cifs': {
+               'Device1': interface1,
+               'Device2': interface1
+            },
+            'ackedstate': 0
          }
       },
-      'txid': 10000,
-      'tagPackets': False,
+      'txid': 10016,
+      'tagPackets': vlan_tagged,
       'state': 3,
-      'ctxName': "pod54net",
-      'tenant': "pod54"
+      'ctxName': "pod3net",
+      'tenant': tenant_name
    }
 }
-
-
+from device_script import serviceModify
 serviceModify (config_dev,config)
-
